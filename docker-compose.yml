@@ -1,0 +1,79 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8001:8001"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      livekit:
+        condition: service_started
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-syltalky}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-syltalky}
+      POSTGRES_DB: ${POSTGRES_DB:-syltalky}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syltalky"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-syltalky}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-syltalky123}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml
+    restart: unless-stopped
+
+  livekit-egress:
+    image: livekit/egress:latest
+    environment:
+      EGRESS_CONFIG_BODY: |
+        api_key: ${LIVEKIT_API_KEY:-devkey}
+        api_secret: ${LIVEKIT_API_SECRET:-devsecret}
+        ws_url: ws://livekit:7880
+        log_level: info
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - /dev/shm:/dev/shm
+      - egress_tmp:/tmp/egress
+    depends_on:
+      - livekit
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:
+  egress_tmp:
