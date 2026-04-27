@@ -31,7 +31,7 @@ def _user_out(user: User) -> UserOut:
         email=user.email,
         display_name=user.display_name,
         gender=user.gender,
-        avatar_path=user.avatar_path,
+        avatar_url=None,
         is_verified=user.is_verified,
     )
 

@@ -47,7 +47,7 @@ class UserOut(BaseModel):
     email: str
     display_name: str
     gender: str
-    avatar_path: str | None
+    avatar_url: str | None
     is_verified: bool
 
 
