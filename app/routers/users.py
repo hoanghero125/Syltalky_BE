@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.voice_profile import UserVoiceConfig
 from app.core.deps import get_current_user
-from app.services.minio_client import upload_bytes, get_presigned_url, delete_object
+from app.services.minio_client import upload_bytes, get_public_url, delete_object
 from app.schemas.user import UserOut, UpdateVoiceConfigRequest, VoiceConfigOut
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -16,10 +16,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 def _avatar_url(user: User) -> str | None:
     if not user.avatar_path:
         return None
-    try:
-        return get_presigned_url(user.avatar_path, expires_hours=12)
-    except Exception:
-        return None
+    return get_public_url(user.avatar_path)
 
 
 def _user_out(user: User) -> UserOut:
