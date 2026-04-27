@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_PUBLIC_ENDPOINT: str = "localhost:9000"
     MINIO_ROOT_USER: str = "syltalky"
     MINIO_ROOT_PASSWORD: str = "syltalky123"
     MINIO_BUCKET: str = "syltalky"
