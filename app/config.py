@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     RESEND_FROM: str = "noreply@syltalky.app"
 
     LIVEKIT_URL: str = "ws://localhost:7880"
+    LIVEKIT_PUBLIC_URL: str = "ws://localhost:7880"
     LIVEKIT_API_KEY: str = "devkey"
     LIVEKIT_API_SECRET: str = "devsecret"
 

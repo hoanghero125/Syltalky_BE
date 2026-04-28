@@ -30,6 +30,22 @@ def _user_out(user: User) -> UserOut:
     )
 
 
+@router.get("/by-ids")
+async def get_users_by_ids(
+    ids: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Fetch display_name + avatar_url for a comma-separated list of user IDs."""
+    try:
+        parsed = [uuid.UUID(i.strip()) for i in ids.split(",") if i.strip()]
+    except ValueError:
+        return []
+    result = await db.execute(select(User).where(User.id.in_(parsed)))
+    users = result.scalars().all()
+    return [{"id": str(u.id), "display_name": u.display_name, "avatar_url": _avatar_url(u)} for u in users]
+
+
 @router.get("/me", response_model=UserOut)
 async def get_me(current_user: User = Depends(get_current_user)):
     return _user_out(current_user)

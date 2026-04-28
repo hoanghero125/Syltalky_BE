@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import get_db
 from app.services.minio_client import ensure_bucket, get_public_url
-from app.routers import auth, users, tts, voices
+from app.routers import auth, users, tts, voices, meetings
 
 
 async def _reregister_voices():
@@ -62,6 +62,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(tts.router)
 app.include_router(voices.router)
+app.include_router(meetings.router)
 
 
 @app.get("/health")
