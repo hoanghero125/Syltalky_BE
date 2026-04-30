@@ -12,9 +12,10 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    hashed_password: Mapped[str | None] = mapped_column(String, nullable=True)
+    google_id: Mapped[str | None] = mapped_column(String, nullable=True, unique=True)
     display_name: Mapped[str] = mapped_column(String, nullable=False)
-    gender: Mapped[str] = mapped_column(String, nullable=False)  # 'male' | 'female'
+    gender: Mapped[str | None] = mapped_column(String, nullable=True)  # 'male' | 'female'
     avatar_path: Mapped[str | None] = mapped_column(String, nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
