@@ -3,7 +3,10 @@ rtc:
   tcp_port: 7881
   udp_port: 7882
   use_external_ip: false
-  node_ip: 127.0.0.1
+  node_ip: 113.190.37.142
+  # For remote participants: set this to your server's public IP
+  # and port-forward TCP 7881 + UDP 7882 on your router
+  # node_ip: YOUR_PUBLIC_IP
 keys:
   devkey: devsecret
 logging:

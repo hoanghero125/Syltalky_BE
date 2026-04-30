@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr, field_validator
 import re
 
@@ -46,9 +47,40 @@ class UserOut(BaseModel):
     id: str
     email: str
     display_name: str
-    gender: str
+    gender: Optional[str]
     avatar_url: str | None
     is_verified: bool
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str  # Google ID token
+
+
+class GoogleAuthResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: UserOut
+    needs_profile: bool = False
+
+
+class CompleteProfileRequest(BaseModel):
+    gender: str
+    display_name: str
+
+    @field_validator("gender")
+    @classmethod
+    def validate_gender(cls, v):
+        if v not in ("male", "female"):
+            raise ValueError("gender must be 'male' or 'female'")
+        return v
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, v):
+        if not v.strip():
+            raise ValueError("Display name cannot be empty")
+        return v.strip()
 
 
 class RefreshRequest(BaseModel):

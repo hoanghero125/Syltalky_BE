@@ -48,7 +48,7 @@ def upload_bytes(key: str, data: bytes, content_type: str = "application/octet-s
 
 
 def get_public_url(key: str) -> str:
-    scheme = "https" if settings.MINIO_SECURE else "http"
+    scheme = "https" if settings.MINIO_PUBLIC_SECURE else "http"
     return f"{scheme}://{settings.MINIO_PUBLIC_ENDPOINT}/{settings.MINIO_BUCKET}/{key}"
 
 

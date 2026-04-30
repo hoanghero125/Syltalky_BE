@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str = "syltalky123"
     MINIO_BUCKET: str = "syltalky"
     MINIO_SECURE: bool = False
+    MINIO_PUBLIC_SECURE: bool = True
 
     RESEND_API_KEY: str
     RESEND_FROM: str = "noreply@syltalky.app"
@@ -25,7 +26,10 @@ class Settings(BaseSettings):
 
     AI_API_URL: str = "http://localhost:8000"
 
-    GEMINI_API_KEY: str
+    LLM_BASE_URL: str
+    LLM_API_KEY: str
+
+    GOOGLE_CLIENT_ID: str = ""
 
     FRONTEND_URL: str = "http://localhost:5173"
 
