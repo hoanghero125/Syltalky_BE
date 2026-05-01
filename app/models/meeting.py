@@ -17,7 +17,6 @@ class Meeting(Base):
     waiting_room_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     started_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ended_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    video_path: Mapped[str | None] = mapped_column(String, nullable=True)
     transcript: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     chat_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
