@@ -12,6 +12,8 @@ minio==7.2.9
 resend==2.4.0
 livekit==0.17.4
 livekit-api==0.7.1
-httpx==0.27.2
+httpx>=0.28.1,<1.0.0
 aiofiles==24.1.0
 websockets>=12.0
+y-py==0.6.2
+bleach==6.1.0

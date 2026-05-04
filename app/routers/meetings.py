@@ -74,6 +74,7 @@ def _generate_token(room_name: str, identity: str, display_name: str, avatar_url
             can_publish=True,
             can_subscribe=True,
             can_publish_data=True,
+            can_update_own_metadata=True,
         )
     )
     return token.to_jwt()
@@ -794,6 +795,7 @@ async def get_meeting(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    from app.models.meeting_extras import Note, Poll, PollVote
     host_alias = User.__table__.alias("host_user")
     result = await db.execute(
         select(Meeting, host_alias.c.display_name.label("host_display_name"))
@@ -805,7 +807,62 @@ async def get_meeting(
     if not row:
         raise HTTPException(status_code=404, detail="Meeting not found")
     m, host_name = row
-    return MeetingOut.model_validate(m, from_attributes=True).model_copy(update={"host_name": host_name})
+
+    notes_rows = (await db.execute(
+        select(Note).where(Note.meeting_id == m.id, Note.deleted_at.is_(None)).order_by(Note.created_at)
+    )).scalars().all()
+    notes_out = [
+        {
+            "id": str(n.id),
+            "title": n.title or "",
+            "plain_text": n.plain_text or "",
+            "plain_html": n.plain_html or "",
+            "updated_at": n.updated_at.isoformat() if n.updated_at else None,
+        }
+        for n in notes_rows
+    ]
+
+    polls_rows = (await db.execute(
+        select(Poll).where(Poll.meeting_id == m.id).order_by(Poll.created_at)
+    )).scalars().all()
+    poll_ids = [p.id for p in polls_rows]
+    tallies_by_poll: dict = {pid: {} for pid in poll_ids}
+    voters_by_poll: dict = {pid: {} for pid in poll_ids}
+    if poll_ids:
+        votes = (await db.execute(select(PollVote).where(PollVote.poll_id.in_(poll_ids)))).scalars().all()
+        voter_ids = list({v.user_id for v in votes})
+        voter_map = {}
+        if voter_ids:
+            users = (await db.execute(select(User).where(User.id.in_(voter_ids)))).scalars().all()
+            for u in users:
+                from app.services.minio_client import get_public_url
+                avatar_url = get_public_url(u.avatar_path) if u.avatar_path else ""
+                voter_map[u.id] = {"user_id": str(u.id), "display_name": u.display_name, "avatar_url": avatar_url or ""}
+        for v in votes:
+            tallies_by_poll[v.poll_id][v.option_id] = tallies_by_poll[v.poll_id].get(v.option_id, 0) + 1
+            voters_by_poll[v.poll_id].setdefault(v.option_id, [])
+            if v.user_id in voter_map:
+                voters_by_poll[v.poll_id][v.option_id].append(voter_map[v.user_id])
+    polls_out = [
+        {
+            "id": str(p.id),
+            "question": p.question,
+            "options": p.options or [],
+            "anonymous": p.anonymous,
+            "multi_choice": p.multi_choice,
+            "closed": p.closed,
+            "tallies": tallies_by_poll.get(p.id, {}),
+            "voters": None if p.anonymous else voters_by_poll.get(p.id, {}),
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        }
+        for p in polls_rows
+    ]
+
+    return MeetingOut.model_validate(m, from_attributes=True).model_copy(update={
+        "host_name": host_name,
+        "notes": notes_out,
+        "polls": polls_out,
+    })
 
 
 @router.post("/webhook")

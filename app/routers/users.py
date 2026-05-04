@@ -69,7 +69,7 @@ async def update_me(
     if avatar and avatar.filename:
         data = await avatar.read()
         ext = avatar.filename.rsplit('.', 1)[-1].lower()
-        key = f"avatars/{current_user.id}.{ext}"
+        key = f"avatars/{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
         if current_user.avatar_path and current_user.avatar_path != key:
             delete_object(current_user.avatar_path)
         upload_bytes(key, data, avatar.content_type or "image/jpeg")
