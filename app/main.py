@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import get_db
 from app.services.minio_client import ensure_bucket, get_public_url
-from app.routers import auth, users, tts, voices, meetings, captions, notifications, sign
+from app.routers import auth, users, tts, voices, meetings, captions, notifications, sign, meeting_extras, notes_sync
 
 
 async def _reregister_voices():
@@ -63,6 +63,8 @@ app.include_router(users.router)
 app.include_router(tts.router)
 app.include_router(voices.router)
 app.include_router(meetings.router)
+app.include_router(meeting_extras.router)
+app.include_router(notes_sync.router)
 app.include_router(captions.router)
 app.include_router(notifications.router)
 app.include_router(sign.router)

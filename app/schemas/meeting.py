@@ -36,6 +36,8 @@ class MeetingOut(BaseModel):
     ended_at: Optional[datetime] = None
     summary: Optional[str] = None
     transcript: Optional[list] = None
+    notes: Optional[list] = None
+    polls: Optional[list] = None
 
     model_config = {"from_attributes": True}
 

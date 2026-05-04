@@ -20,6 +20,7 @@ class Meeting(Base):
     transcript: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     chat_history: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    co_hosts: Mapped[list | None] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
 
     host = relationship("User", foreign_keys=[host_id])
     participants = relationship("MeetingParticipant", back_populates="meeting", cascade="all, delete-orphan")

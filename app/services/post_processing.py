@@ -6,12 +6,14 @@ Post-processing triggered after a meeting ends:
 import asyncio
 
 import httpx
+from datetime import datetime, timezone
 from sqlalchemy import select
 
 from app.config import settings
 from app.database import AsyncSessionLocal
 from app.models.caption import Caption
 from app.models.meeting import Meeting
+from app.models.meeting_extras import Poll
 from app.models.user import User
 
 CHUNK_SIZE = 12000
@@ -78,9 +80,39 @@ async def _summarize(transcript_text: str) -> str:
     ])
 
 
+async def _finalize_extras(meeting_id):
+    """Close any still-open polls and flush + drop in-memory note rooms."""
+    # Close open polls
+    async with AsyncSessionLocal() as db:
+        polls = (await db.execute(
+            select(Poll).where(Poll.meeting_id == meeting_id, Poll.closed.is_(False))
+        )).scalars().all()
+        now = datetime.now(timezone.utc)
+        for p in polls:
+            p.closed = True
+            p.closed_at = now
+        if polls:
+            await db.commit()
+
+    # Flush + clear note rooms
+    try:
+        from app.routers.notes_sync import _rooms, _rooms_lock
+        async with _rooms_lock:
+            rooms = list(_rooms.values())
+        for room in rooms:
+            try:
+                await room.persist()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 async def run_post_processing(meeting_id, host_id):
     """Run in background after meeting.ended_at is set."""
     await asyncio.sleep(2)  # let DB writes settle
+
+    await _finalize_extras(meeting_id)
 
     async with AsyncSessionLocal() as db:
         cap_result = await db.execute(
