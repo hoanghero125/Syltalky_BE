@@ -331,6 +331,7 @@ async def approve_request(
     participant = part_result.scalar_one_or_none()
     if participant:
         participant.left_at = None
+        participant.kicked = False
     else:
         db.add(MeetingParticipant(meeting_id=meeting.id, user_id=req.user_id))
 
@@ -358,6 +359,67 @@ async def approve_request(
             })
         except Exception:
             pass
+
+
+@router.post("/{meeting_id}/approve-all", status_code=204)
+async def approve_all_requests(
+    meeting_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Meeting).where(Meeting.id == meeting_id))
+    meeting = result.scalar_one_or_none()
+    if not meeting or meeting.host_id != user.id:
+        raise HTTPException(status_code=403, detail="Not the host")
+
+    reqs_result = await db.execute(
+        select(MeetingWaitingRequest).where(
+            MeetingWaitingRequest.meeting_id == meeting_id,
+            MeetingWaitingRequest.status == "pending",
+        )
+    )
+    pending = reqs_result.scalars().all()
+
+    for req in pending:
+        part_result = await db.execute(
+            select(MeetingParticipant).where(
+                MeetingParticipant.meeting_id == meeting.id,
+                MeetingParticipant.user_id == req.user_id,
+            )
+        )
+        participant = part_result.scalar_one_or_none()
+        if participant:
+            participant.left_at = None
+            participant.kicked = False
+        else:
+            db.add(MeetingParticipant(meeting_id=meeting.id, user_id=req.user_id))
+
+        token = _generate_token(
+            room_name=meeting.livekit_room_name,
+            identity=str(req.user_id),
+            display_name=req.display_name,
+            avatar_url=req.avatar_url or "",
+        )
+        req.status = "approved"
+        req.token = token
+
+    await db.commit()
+
+    # Notify each waiting participant
+    for req in pending:
+        ws = _waiting_connections.get(str(req.id))
+        if ws:
+            try:
+                await ws.send_json({
+                    "type": "join_approved",
+                    "token": req.token,
+                    "livekit_url": settings.LIVEKIT_PUBLIC_URL,
+                    "meeting_id": str(meeting.id),
+                    "room_code": meeting.room_code,
+                    "host_id": str(meeting.host_id),
+                })
+            except Exception:
+                pass
 
 
 @router.post("/{meeting_id}/deny/{request_id}", status_code=204)
