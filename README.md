@@ -137,6 +137,7 @@ On startup, all stored voice profiles are automatically re-registered with the A
 | WS | `/meetings/{id}/waiting-ws` | Waiting room WebSocket (host approves/denies) |
 | GET | `/meetings/{id}/waiting` | List pending waiting room requests |
 | POST | `/meetings/{id}/approve/{request_id}` | Approve waiting room request |
+| POST | `/meetings/{id}/approve-all` | Approve all pending waiting room requests at once |
 | POST | `/meetings/{id}/deny/{request_id}` | Deny waiting room request |
 | PATCH | `/meetings/{id}/waiting-room` | Toggle waiting room on/off |
 
@@ -172,14 +173,6 @@ The backend taps each LiveKit participant's audio track, streams it to `/ws/stt`
 |---|---|---|
 | POST | `/sign` | Proxy to AI API `/sign` — ASL video → Vietnamese text |
 
-### Notifications  (`/notifications`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/notifications` | List unread notifications |
-| PATCH | `/notifications/{id}/read` | Mark as read |
-| WS | `/notifications/ws` | Real-time push (token as query param) |
-
 ---
 
 ## Database schema
@@ -189,9 +182,9 @@ users               — accounts (email, password hash, display_name, gender, av
 voice_profiles      — cloned voice profiles (ref audio path, ref text, active_voice_id)
 user_voice_config   — per-user TTS settings (mode: design|clone, design tags, active profile)
 meetings            — meeting records (room code, LiveKit room, transcript JSONB, summary)
-meeting_participants — join/leave timestamps per user per meeting
+meeting_participants — join/leave timestamps, kicked flag per user per meeting
+meeting_waiting_requests — waiting room requests with status (pending/approved/denied/cancelled)
 captions            — per-segment transcription rows (text, speaker, timestamp_ms, is_tts)
-notifications       — async notifications (type: summary_ready, payload JSONB)
 meeting_extras      — pinned_messages, polls, poll_votes, notes
 ```
 
@@ -207,7 +200,6 @@ When a host ends a meeting (`POST /meetings/{id}/end`):
 2. A speaker-labelled transcript is assembled.
 3. Qwen3.5-35B-A3B (via `LLM_BASE_URL`) summarises the transcript into bullet points (Vietnamese Markdown).
 4. The summary and full transcript are stored on the `meetings` row.
-5. A `summary_ready` notification is pushed to the host via the notifications WebSocket.
 
 ---
 
