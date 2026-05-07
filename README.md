@@ -153,8 +153,9 @@ The backend taps each LiveKit participant's audio track, streams it to `/ws/stt`
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/meetings/{id}/state` | Full meeting state (pins, polls, notes, co-hosts) |
-| POST | `/meetings/{id}/co-hosts` | Promote participants to co-host |
+| GET | `/meetings/{id}/state` | Full meeting state (pins, polls, notes) |
+| GET | `/meetings/{id}/co-hosts` | Get current co-host list |
+| POST | `/meetings/{id}/co-hosts` | Set co-host list (host only) |
 | POST | `/meetings/{id}/pins` | Pin a chat message |
 | DELETE | `/meetings/{id}/pins/{pin_id}` | Unpin |
 | POST | `/meetings/{id}/polls` | Create a poll |

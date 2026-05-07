@@ -154,6 +154,16 @@ async def get_state(
 
 # ── Co-hosts (server-side authoritative list) ────────────────────────────────
 
+@router.get("/{meeting_id}/co-hosts")
+async def get_co_hosts(
+    meeting_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    meeting = await get_meeting_or_404(meeting_id, db)
+    return {"co_hosts": meeting.co_hosts or []}
+
+
 @router.post("/{meeting_id}/co-hosts")
 async def set_co_hosts(
     meeting_id: str,
